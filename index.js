@@ -156,6 +156,55 @@ app.post("/allot-course", async (req, res) => {
     }
 })
 
+app.post('/add-faculty-preference', (req, res) => {
+    const {
+        faculty_id,
+        course_code,
+        preference,
+        facultyrole,
+        totalnoofcsstudnets,
+        totalnootherdisciplinestudents,
+    } = req.body;
+
+    // Validate required fields
+    if (!faculty_id || !course_code || !preference || !facultyrole) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Insert new entry into FACULTYPREFERNCE table
+    const insertQuery = `
+        INSERT INTO FACULTYPREFERNCE (
+            faculty_id,
+            course_code,
+            preference,
+            facultyrole,
+            totalnoofcsstudnets,
+            totalnootherdisciplinestudents
+        ) VALUES (?, ?, ?, ?, ?, ?)
+    `;
+
+    const values = [
+        faculty_id,
+        course_code,
+        preference,
+        facultyrole,
+        totalnoofcsstudnets || null,
+        totalnootherdisciplinestudents || null,
+    ];
+
+    db.query(insertQuery, values, (err, result) => {
+        if (err) {
+            console.error('Error inserting into FACULTYPREFERNCE:', err);
+            return res.status(500).json({ error: 'Failed to add faculty preference' });
+        }
+
+        console.log('New entry added to FACULTYPREFERNCE:', result.insertId);
+        res.status(201).json({ message: 'Faculty preference added successfully' });
+    });
+});
+
+
+
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
