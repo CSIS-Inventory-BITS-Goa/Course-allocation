@@ -5,7 +5,7 @@ const mysql = require('mysql');
 
 const app = express();
 const port = 3000;
-
+const { getAuthToken, appendData } = require("./googleSheetsService.js");
 // Multer middleware for file uploads
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
@@ -111,7 +111,7 @@ app.post('/upload-course', upload.single('file'), (req, res) => {
     }
 });
 
-app.post("/allot-course", (req, res) => {
+app.post("/allot-course", async (req, res) => {
     try {
         const query = `
     SELECT *
@@ -129,20 +129,24 @@ app.post("/allot-course", (req, res) => {
             const allocatedRoles = new Set();
 
             // Step 3: Iterate through the sorted preferences and allocate courses
-            results.forEach((preferences) => {
-                const { faculty_id, course_code, preference, facultyrole } = preferences;
+            results.forEach(async (preferences) => {
+                const { faculty_id, course_code, preference, facultyrole, totalnoofcsstudnets, totalnootherdisciplinestudents } = preferences;
 
-                // Check if the course is already allocated
-
+                const auth = await getAuthToken();
+                const finalwrite =[]
                 // Check if the role is already allocated for this course
                 if (!allocatedRoles.has(`${course_code}-${facultyrole}`)) {
                     // Allocate the course to the faculty
                     console.log(`Allocating ${course_code} to ${faculty_id} with role ${facultyrole}`);
                     allocatedCourses.add(course_code);
                     allocatedRoles.add(`${course_code}-${facultyrole}`);
+                    const data = [faculty_id,course_code, facultyrole, totalnoofcsstudnets, totalnootherdisciplinestudents];
+                    finalwrite.push(data)
                 }
-
+                
+                appendData(auth, finalwrite);
             });
+            res.status(201).json({ message: "Course allocation done" })
         })
     }
     catch (error) {
