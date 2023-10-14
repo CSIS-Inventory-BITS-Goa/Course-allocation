@@ -23,5 +23,6 @@ bun --hot run index.js
 ```
 
 
-index.html contains the frontend for testing purposes.
-Book1.xlsx is the courses file used for populating the database.
+- index.html contains the frontend for testing purposes.
+- Book1.xlsx is the courses file used for populating the database.
+- Test Google Sheets file is linked [here](https://docs.google.com/spreadsheets/d/1IUBE1QjigsLsrYMe9AzpWDGA7OmMqvoSk5Djh5A88V4).
