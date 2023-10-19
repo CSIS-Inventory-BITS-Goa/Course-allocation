@@ -8,7 +8,8 @@ const port = 3000;
 const {
     getAuthToken,
     appendData
-} = require("./googleSheetsService.js");
+} = require('./googleSheetsService.js');
+
 // Multer middleware for file uploads
 const storage = multer.memoryStorage();
 const upload = multer({
@@ -16,8 +17,10 @@ const upload = multer({
 });
 
 app.use(express.json());
+
 // MySQL database configuration
 const db = mysql.createConnection({
+    multipleStatements: true,
     host: 'localhost', // Update with your MySQL server host
     user: 'root', // Update with your MySQL username
     password: 'Password@123', // Update with your MySQL password
@@ -37,30 +40,29 @@ db.on('error', (err) => {
     console.error('MySQL database error:', err);
     if (err.code === 'PROTOCOL_CONNECTION_LOST') {
         db.connect((err) => {
-            if (err) {
+            if (err)
                 console.error('Error reconnecting to MySQL database:', err);
-            } else {
+            else 
                 console.log('Reconnected to MySQL database');
-            }
         });
-    } else {
-        throw err;
-    }
+    } else console.error(err);
 });
 
-let programTypes = new Set(["OnCampus", "WILP"]);
+// Algortithm specific constants
+let programTypes = new Set(['OnCampus', 'WILP']);
+let courseClear = 'SET FOREIGN_KEY_CHECKS = 0; TRUNCATE TABLE COURSE; SET FOREIGN_KEY_CHECKS = 1;'
 
-app.get("/", (req, res) => {
-    res.status(200).send("Welcome to CSIS API")
+app.get('/', (req, res) => {
+    res.status(200).send('Welcome to CSIS Course Allocation API 🚀')
 });
 
 // Clear the COURSE table
 app.post('/clear-course', (req, res) => {
-    db.query('TRUNCATE TABLE course', (err, results) => {
+    db.query(courseClear, (err, results) => {
         if (err) {
-            console.error('Failed to clear COURSE table:', err);
+            console.error('Failed to clear COURSE table', err);
             res.status(500).json({
-                error: 'Failed to clear COURSE table.'
+                error: 'Failed to clear COURSE table' + err.sqlMessage
             });
         } else {
             console.log('COURSE table cleared.');
@@ -76,12 +78,9 @@ app.post('/upload-course', upload.single('file'), (req, res) => {
     try {
         // Clear the COURSE table
         db.query('TRUNCATE TABLE COURSETAKEN', async (err, results) => {
-            if (err) {
-                console.error('Failed to clear COURSE table:', err);
-                throw err;
-            }
-
-            console.log('Database cleared');
+            if (err) 
+                console.error('Failed to clear COURSE table:', err.sqlMessage);
+            else console.log('Database cleared');
 
             // Parse the Excel file from memory buffer
             const workbook = xlsx.read(req.file.buffer, {
@@ -101,9 +100,8 @@ app.post('/upload-course', upload.single('file'), (req, res) => {
                                 if (err) {
                                     console.error('Failed to insert data:', err);
                                     reject(err);
-                                } else {
+                                } else 
                                     resolve(results);
-                                }
                             }
                         );
                     } else {
@@ -113,27 +111,34 @@ app.post('/upload-course', upload.single('file'), (req, res) => {
                 });
             });
 
-
+            failing = [];
             Promise.allSettled(insertQueries)
                 .then((results) => {
-                    const failedPromises = results.filter((result) => result.status === "rejected" && result.reason.substring(0, 4) === "data");
+                    const failedPromises = results.filter((result) => result.status === 'rejected');
                     if (failedPromises.length > 0) {
-                        failedPromises.forEach((promise) =>
-                            console.error('Failed to insert data into COURSE table:', promise.reason)
-                        );
+                        failedPromises.forEach((promise) => {
+                            console.error('Failed to insert data into COURSE table:', promise.reason);
+                            failing.push(`Invalid ${promise.reason}`);
+                        });
 
-                        db.query('TRUNCATE TABLE COURSE ', async (err, results) => {
+                        db.query(courseClear, async (err, results) => {
                             if (err) {
                                 console.error('Failed to clear COURSE table:', err);
-                                throw err;
+                                res.status(500).json({
+                                    error: 'Failed to clear COURSE table' + err.sqlMessage
+                                });
+                            }
+                            else{ 
+                                console.log('Database cleared');
+                                res.status(200).json({
+                                    message : failing
+                                });
                             }
                         });
-                        console.log('Database cleared');
-                        res.status(500).json({
-                            error: 'Failed to insert data into COURSE table.'
-                        });
+                       
                     } else {
-                        res.json({
+                        console.log('Data inserted into COURSE table.');
+                        res.status(201).json({
                             message: 'Data inserted into COURSE table.'
                         });
                     }
@@ -149,7 +154,7 @@ app.post('/upload-course', upload.single('file'), (req, res) => {
     }
 });
 
-app.post("/allot-course", async (req, res) => {
+app.post('/allot-course', async (req, res) => {
     try {
         const query = `
     SELECT *
@@ -160,7 +165,7 @@ app.post("/allot-course", async (req, res) => {
             if (err) {
                 console.error('Error querying the database:', err);
                 res.status(500).json({
-                    error: err
+                    error: 'Data could not be fetched from table' + err.sqlMessage
                 });;
             }
 
@@ -195,7 +200,7 @@ app.post("/allot-course", async (req, res) => {
             });
             appendData(auth, finalwrite);
             res.status(201).json({
-                message: "Course allocation done"
+                message: 'Course allocation done'
             })
         })
     } catch (error) {
@@ -256,7 +261,7 @@ app.post('/add-faculty-preference', (req, res) => {
         if (err) {
             console.error('Error inserting into FACULTYPREFERNCE:', err);
             return res.status(500).json({
-                error: 'Failed to add faculty preference'
+                error: 'Failed to add faculty preference' + err.sqlMessage
             });
         }
 
@@ -293,7 +298,7 @@ app.post('/add-faculty-preference', (req, res) => {
         if (err) {
             console.error('Error inserting into COURSEPREFERENCE:', err);
             return res.status(500).json({
-                error: 'Failed to add course preference'
+                error: 'Failed to add course preference' + err.sqlMessage
             });
         }
 
