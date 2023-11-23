@@ -6,10 +6,13 @@ To install dependencies:
 ```bash
 npm install
 ```
+
 or
+
 ```
 bun install
 ```
+
 or
 
 To run:
@@ -17,11 +20,12 @@ To run:
 ```bash
 node index.js
 ```
+
 or
+
 ```bash
 bun --hot run index.js
 ```
-
 
 - index.html contains the frontend for testing purposes.
 - Book1.xlsx is the courses file used for populating the database.
