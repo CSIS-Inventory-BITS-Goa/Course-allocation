@@ -1,3 +1,5 @@
+import { appendData, getAuthToken } from "../googleSheetsService";
+
 const express = require("express");
 const { db } = require("../db");
 const taRouter = express.Router();
@@ -84,7 +86,24 @@ taRouter.post("/allot-ta", async (req, res) => {
         });
       }
 
-      console.log(allottedCourses);
+      // console.log(allottedCourses);
+      const sheetData = [];
+      sheetData.push(["Course ID", "Student ID", "CGPA", "GradePoint"])
+      for (const course in allottedCourses) {
+        const currRow = [];
+        currRow.push(course);
+        allottedCourses[course].forEach((student) => {
+          const studentRow = [];
+          studentRow.push(course);
+          studentRow.push(student["sid"]);
+          studentRow.push(student["cg"]);
+          studentRow.push(student["gradePoint"]);
+          sheetData.push(studentRow);
+        })
+      }
+      console.log(sheetData);
+      // appendData(getAuthToken, sheetData);
+
       res.status(201).json({
         message: 'TA allocation done'
     })

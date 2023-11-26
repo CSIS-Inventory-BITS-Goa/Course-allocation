@@ -173,7 +173,7 @@ courseRouter.post("/allot-course", async (req, res) => {
 					finalwrite.push(data);
 				}
 			});
-			courseRouterendData(auth, finalwrite);
+			appendData(auth, finalwrite);
 			res.status(201).json({
 				message: "Course allocation done",
 			});
