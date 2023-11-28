@@ -282,4 +282,66 @@ courseRouter.post("/add-faculty-preference", (req, res) => {
 	});
 });
 
+courseRouter.post("/upload-final", upload.single("file"), (req, res) => {
+	try {
+		// Parse the Excel file from memory buffer
+		const workbook = xlsx.read(req.file.buffer, {
+			type: "buffer",
+		});
+		const sheetName = workbook.SheetNames[0];
+		const sheetData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+		// Insert data into the COURSE table
+		const insertQueries = sheetData.map((row) => {
+			return new Promise((resolve, reject) => {
+				db.query(
+					"INSERT INTO COURSETAKEN (courseid, authorid, facultyrole, totalnoofcsstudents, totalnootherdisciplinestudents, comments) VALUES (?, ?, ?, ?, ?, ?)",
+					[
+						row["COURSE NO"],
+						row["FACULTY ID"],
+						row["facultyrole"],
+						row["totalnoofcsstudents"],
+						row["totalnootherdisciplinestudents"],
+						row["comments"]
+					],
+					(err, results) => {
+						if (err) {
+							console.error("Failed to insert data:", err);
+							reject(err);
+						} else resolve(results);
+					}
+				);
+			});
+		});
+
+		failing = [];
+		Promise.allSettled(insertQueries).then((results) => {
+			const failedPromises = results.filter(
+				(result) => result.status === "rejected"
+			);
+			if (failedPromises.length > 0) {
+				failedPromises.forEach((promise) => {
+					console.error(
+						"Failed to insert data into COURSETAKEN table:",
+						promise.reason
+					);
+					failing.push(`Invalid ${promise.reason}`);
+				});
+
+			} else {
+				console.log("Data inserted into COURSETAKEN table.");
+				res.status(201).json({
+					message: "Data inserted into COURSETAKEN table.",
+				});
+			}
+		});
+	} catch (error) {
+		console.error("Error:", error);
+		res.status(500).json({
+			error: "Failed to insert data into COURSETAKEN table.",
+		});
+	}
+});
+
+
 module.exports = courseRouter;

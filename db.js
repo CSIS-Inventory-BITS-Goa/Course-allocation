@@ -4,7 +4,7 @@ const db = mysql.createConnection({
     multipleStatements: true,
     host: 'localhost', // Update with your MySQL server host
     user: 'root', // Update with your MySQL username
-    password: 'Password@123', // Update with your MySQL password
+    password: 'password', // Update with your MySQL password
     database: 'testdb', // Update with your MySQL database name
 });
 
