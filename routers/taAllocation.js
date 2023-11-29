@@ -286,12 +286,4 @@ taRouter.post("/upload-final", upload.single("file"), (req, res) => {
 	}
 });
 
-taRouter.post("/send-email", (req, res) => {
-	//     try {
-	// 		const query = `
-	//     SELECT *
-	//     FROM
-	//   `;
-});
-
 module.exports = taRouter;
